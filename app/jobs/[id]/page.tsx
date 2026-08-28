@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type Job = {
     id: string;
     title: string;
@@ -81,12 +83,12 @@ export default async function JobDetailsPage({
     return (
         <main className="min-h-screen bg-zinc-950 text-white">
             <div className="mx-auto max-w-4xl px-6 py-16">
-                <a
+                <Link
                     href="/"
                     className="text-sm text-zinc-500 hover:text-white"
                 >
                     ← Back to jobs
-                </a>
+                </Link>
 
                 <div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
                     <p className="text-sm font-medium text-cyan-400">

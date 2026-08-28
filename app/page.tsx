@@ -14,9 +14,22 @@ const availableSkills = [
   "Jest",
 ];
 
+type Job = {
+  id: string;
+  title: string;
+  location: string;
+  workMode: string;
+  experience: string;
+  company: string;
+  requiredSkills: string[];
+  matchedSkills: string[];
+  missingSkills: string[];
+  matchPercentage: number;
+};
+
 export default function Home() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [skillPaths, setSkillPaths] = useState<string[][]>([]);
   const [graphLoading, setGraphLoading] = useState(false);
@@ -165,7 +178,7 @@ export default function Home() {
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {job.matchedSkills.map((skill: string) => (
+                  {job.matchedSkills.map((skill) => (
                     <span
                       key={skill}
                       className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300"
@@ -199,7 +212,7 @@ export default function Home() {
                     </p>
 
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {job.missingSkills.map((skill: string) => (
+                      {job.missingSkills.map((skill) => (
                         <span
                           key={skill}
                           className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-400"
