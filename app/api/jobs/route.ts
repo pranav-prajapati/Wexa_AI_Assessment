@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { driver } from "@/lib/db";
 
+type JobResult = {
+  id: string;
+  title: string;
+  location: string;
+  workMode: string;
+  experience: string;
+  company: string;
+  requiredSkills: string[];
+  matchedSkills: string[];
+  missingSkills: string[];
+  matchPercentage: number;
+};
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const skillsParam = searchParams.get("skills");
@@ -48,18 +61,19 @@ export async function GET(request: NextRequest) {
       { skills },
     );
 
-    const jobs = result.records.map((record) => {
+    const jobs: JobResult[] = result.records.map((record) => {
       const job = record.get("job");
       const company = record.get("company");
-      const requiredSkills = record.get("requiredSkills");
-      const matchedSkills = record.get("matchedSkills");
+
+      const requiredSkills = record.get("requiredSkills") as string[];
+      const matchedSkills = record.get("matchedSkills") as string[];
 
       const matchPercentage = Math.round(
         (matchedSkills.length / requiredSkills.length) * 100,
       );
 
       const missingSkills = requiredSkills.filter(
-        (skill: string) => !matchedSkills.includes(skill),
+        (skill) => !matchedSkills.includes(skill),
       );
 
       return {

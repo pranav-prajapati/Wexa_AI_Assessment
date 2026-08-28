@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
   `,
       { skillName },
     );
-    const paths = result.records.map((record) => {
-      return record.get("path");
+    const paths: string[][] = result.records.map((record) => {
+      return record.get("path") as string[];
     });
 
     return NextResponse.json({

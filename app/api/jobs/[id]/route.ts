@@ -33,7 +33,7 @@ export async function GET(
 
     const job = record.get("job");
     const company = record.get("company");
-    const requiredSkills = record.get("requiredSkills");
+    const requiredSkills = record.get("requiredSkills") as string[];
 
     return NextResponse.json({
       id: job.elementId,
