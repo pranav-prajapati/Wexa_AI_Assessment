@@ -6,17 +6,8 @@ import SkillSelector from "@/components/SkillSelector";
 import JobCard from "@/components/JobCard";
 import SkillGraph from "@/components/SkillGraph";
 import type { Job } from "@/types/job";
-
-const availableSkills = [
-  "React",
-  "TypeScript",
-  "JavaScript",
-  "Next.js",
-  "Node.js",
-  "GraphQL",
-  "CSS",
-  "Jest",
-];
+import { AVAILABLE_SKILLS } from "@/constants/skills";
+import { API_ROUTES } from "@/constants/config";
 
 function parseSkills(skillsParam: string | null): string[] {
   return skillsParam
@@ -50,7 +41,7 @@ function HomeContent() {
 
     try {
       const response = await fetch(
-        `/api/jobs?skills=${encodeURIComponent(skills.join(","))}`
+        `${API_ROUTES.jobs}?skills=${encodeURIComponent(skills.join(","))}`
       );
 
       const data = await response.json();
@@ -120,25 +111,25 @@ function HomeContent() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
+    <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-6 py-16">
         <div className="mb-12">
-          <p className="mb-3 text-sm font-medium text-cyan-400">
+          <p className="flex items-center gap-1.5 text-lg font-semibold text-primary">
             SkillGraph
           </p>
 
-          <h1 className="text-4xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             Find opportunities through your skills.
           </h1>
 
-          <p className="mt-4 max-w-2xl text-zinc-400">
+          <p className="mt-4 max-w-2xl text-foreground-secondary">
             Select the skills you know and explore jobs connected through the
             skill graph.
           </p>
         </div>
 
         <SkillSelector
-          availableSkills={availableSkills}
+          availableSkills={AVAILABLE_SKILLS}
           selectedSkills={selectedSkills}
           onToggleSkill={toggleSkill}
         />
@@ -148,10 +139,10 @@ function HomeContent() {
             <h2 className="text-2xl font-semibold">Recommended jobs</h2>
 
             {loading ? (
-              <span className="text-sm text-zinc-500">Finding jobs...</span>
+              <span className="text-sm text-foreground-muted">Finding jobs...</span>
             ) : (
               jobs.length > 0 && (
-                <span className="text-sm text-zinc-500">
+                <span className="text-sm text-foreground-muted">
                   {jobs.length} opportunities
                 </span>
               )
@@ -159,8 +150,8 @@ function HomeContent() {
           </div>
 
           {jobs.length === 0 && !loading && (
-            <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/50 p-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/10 text-xl text-cyan-300">
+            <div className="rounded-2xl border border-dashed border-border bg-surface/50 p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary text-xl text-foreground-muted">
                 ✦
               </div>
 
@@ -168,7 +159,7 @@ function HomeContent() {
                 Discover your next opportunity
               </h3>
 
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-foreground-muted">
                 Select the skills you know above and we&apos;ll find jobs that
                 match your current skill set.
               </p>
