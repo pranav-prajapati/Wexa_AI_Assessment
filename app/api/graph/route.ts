@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { driver } from "@/lib/db";
+import type { SkillGraphPath } from "@/types/job";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -32,8 +33,8 @@ export async function GET(request: NextRequest) {
   `,
       { skillName },
     );
-    const paths: string[][] = result.records.map((record) => {
-      return record.get("path") as string[];
+    const paths: SkillGraphPath[] = result.records.map((record) => {
+      return record.get("path") as SkillGraphPath;
     });
 
     return NextResponse.json({

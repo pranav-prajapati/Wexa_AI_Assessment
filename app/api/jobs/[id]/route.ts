@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { driver } from "@/lib/db";
+import type { JobDetail } from "@/types/job";
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +36,7 @@ export async function GET(
     const company = record.get("company");
     const requiredSkills = record.get("requiredSkills") as string[];
 
-    return NextResponse.json({
+    const jobDetail: JobDetail = {
       id: job.elementId,
       title: job.properties.title,
       location: job.properties.location,
@@ -43,7 +44,9 @@ export async function GET(
       experience: job.properties.experience,
       company: company.properties.name,
       requiredSkills,
-    });
+    };
+
+    return NextResponse.json(jobDetail);
   } catch (error) {
     console.error("Failed to fetch job:", error);
 

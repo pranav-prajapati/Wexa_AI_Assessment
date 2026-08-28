@@ -1,7 +1,11 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import SkillSelector from "@/components/SkillSelector";
+import JobCard from "@/components/JobCard";
+import SkillGraph from "@/components/SkillGraph";
+import type { Job } from "@/types/job";
 
 const availableSkills = [
   "React",
@@ -14,68 +18,103 @@ const availableSkills = [
   "Jest",
 ];
 
-type Job = {
-  id: string;
-  title: string;
-  location: string;
-  workMode: string;
-  experience: string;
-  company: string;
-  requiredSkills: string[];
-  matchedSkills: string[];
-  missingSkills: string[];
-  matchPercentage: number;
-};
+function parseSkills(skillsParam: string | null): string[] {
+  return skillsParam
+    ? skillsParam
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean)
+    : [];
+}
 
-export default function Home() {
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+function HomeContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(() =>
+    parseSkills(searchParams.get("skills"))
+  );
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
-  const [skillPaths, setSkillPaths] = useState<string[][]>([]);
-  const [graphLoading, setGraphLoading] = useState(false);
 
-  async function exploreSkill(skill: string) {
-    setGraphLoading(true);
+  // Ignore stale responses if skills change again before this resolves.
+  const latestRequestIdRef = useRef(0);
 
-    try {
-      const response = await fetch(
-        `/api/graph?skill=${encodeURIComponent(skill)}`
-      );
+  const findJobs = useCallback(async (skills: string[]) => {
+    if (skills.length === 0) return;
 
-      const data = await response.json();
-
-      setSkillPaths(data.paths ?? []);
-    } catch (error) {
-      console.error("Failed to fetch skill connections:", error);
-    } finally {
-      setGraphLoading(false);
-    }
-  }
-
-  function toggleSkill(skill: string) {
-    setSelectedSkills((current) =>
-      current.includes(skill)
-        ? current.filter((item) => item !== skill)
-        : [...current, skill]
-    );
-  }
-
-  async function findJobs() {
-    if (selectedSkills.length === 0) return;
+    const requestId = ++latestRequestIdRef.current;
 
     setLoading(true);
 
     try {
       const response = await fetch(
-        `/api/jobs?skills=${encodeURIComponent(selectedSkills.join(","))}`
+        `/api/jobs?skills=${encodeURIComponent(skills.join(","))}`
       );
 
       const data = await response.json();
 
-      setJobs(data.jobs ?? []);
+      if (requestId === latestRequestIdRef.current) {
+        setJobs(data.jobs ?? []);
+      }
     } catch (error) {
       console.error("Failed to fetch jobs:", error);
     } finally {
+      if (requestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  // Avoid re-fetching when the URL changes because of our own toggle.
+  const syncedSkillsParamRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const skillsParam = searchParams.get("skills");
+
+    if (skillsParam === syncedSkillsParamRef.current) return;
+
+    syncedSkillsParamRef.current = skillsParam;
+
+    const urlSkills = parseSkills(skillsParam);
+
+    setSelectedSkills(urlSkills);
+
+    if (urlSkills.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring results for skills already present in the URL
+      findJobs(urlSkills);
+    }
+  }, [searchParams, findJobs]);
+
+  function toggleSkill(skill: string) {
+    const next = selectedSkills.includes(skill)
+      ? selectedSkills.filter((item) => item !== skill)
+      : [...selectedSkills, skill];
+
+    setSelectedSkills(next);
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (next.length > 0) {
+      params.set("skills", next.join(","));
+    } else {
+      params.delete("skills");
+    }
+
+    // Mark it handled before the URL actually changes, so the effect above skips it.
+    syncedSkillsParamRef.current = next.length > 0 ? next.join(",") : null;
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+
+    if (next.length > 0) {
+      findJobs(next);
+    } else {
+      latestRequestIdRef.current += 1;
+      setJobs([]);
       setLoading(false);
     }
   }
@@ -98,56 +137,24 @@ export default function Home() {
           </p>
         </div>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <div>
-            <h2 className="text-lg font-semibold">Your skills</h2>
-
-            <p className="mt-1 text-sm text-zinc-500">
-              Select the skills you currently have.
-            </p>
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            {availableSkills.map((skill) => {
-              const selected = selectedSkills.includes(skill);
-
-              return (
-                <button
-                  key={skill}
-                  onClick={() => toggleSkill(skill)}
-                  className={`rounded-full border px-4 py-2 text-sm transition ${selected
-                    ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
-                    : "border-zinc-700 text-zinc-300 hover:border-zinc-500"
-                    }`}
-                >
-                  {skill}
-                </button>
-              );
-            })}
-          </div>
-          {selectedSkills.length > 0 && (
-            <p className="mt-4 text-sm text-zinc-500">
-              {selectedSkills.length}{" "}
-              {selectedSkills.length === 1 ? "skill" : "skills"} selected
-            </p>
-          )}
-          <button
-            onClick={findJobs}
-            disabled={selectedSkills.length === 0 || loading}
-            className="mt-6 rounded-xl bg-cyan-400 px-5 py-3 font-medium text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading ? "Finding jobs..." : "Find matching jobs"}
-          </button>
-        </section>
+        <SkillSelector
+          availableSkills={availableSkills}
+          selectedSkills={selectedSkills}
+          onToggleSkill={toggleSkill}
+        />
 
         <section className="mt-10">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-2xl font-semibold">Recommended jobs</h2>
 
-            {jobs.length > 0 && (
-              <span className="text-sm text-zinc-500">
-                {jobs.length} opportunities
-              </span>
+            {loading ? (
+              <span className="text-sm text-zinc-500">Finding jobs...</span>
+            ) : (
+              jobs.length > 0 && (
+                <span className="text-sm text-zinc-500">
+                  {jobs.length} opportunities
+                </span>
+              )
             )}
           </div>
 
@@ -162,178 +169,29 @@ export default function Home() {
               </h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-                Select the skills you know above and we'll find jobs that match
-                your current skill set.
+                Select the skills you know above and we&apos;ll find jobs that
+                match your current skill set.
               </p>
             </div>
           )}
 
           <div className="grid gap-4">
             {jobs.map((job) => (
-              <Link
-                key={job.id}
-                href={`/jobs/${job.id}?skills=${encodeURIComponent(
-                  selectedSkills.join(",")
-                )}`}
-                className="group block rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-600 hover:bg-zinc-800">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-semibold transition group-hover:text-cyan-300">
-                      {job.title}
-                    </h3>
-
-                    <p className="mt-1 text-zinc-400">{job.company}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-3xl font-bold tracking-tight text-cyan-300">
-                      {job.matchPercentage}%
-                    </div>
-
-                    <div className="text-xs text-zinc-500">match</div>
-                  </div>
-                </div>
-
-                <p className="mt-4 text-sm text-zinc-500">
-                  {job.location} · {job.experience}
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {job.matchedSkills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-full bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Add the match bar HERE */}
-                <div className="mt-5">
-                  <div className="mb-2 flex justify-between text-xs text-zinc-500">
-                    <span>
-                      {job.matchedSkills.length} of {job.requiredSkills.length} skills matched
-                    </span>
-
-                    <span>{job.matchPercentage}%</span>
-                  </div>
-
-                  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-                    <div
-                      className="h-full rounded-full bg-cyan-400"
-                      style={{ width: `${job.matchPercentage}%` }}
-                    />
-                  </div>
-                </div>
-                {job.missingSkills.length > 0 && (
-                  <div className="mt-5">
-                    <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                      Missing skills
-                    </p>
-
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {job.missingSkills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-400"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="mt-6 text-sm font-medium text-cyan-400 transition group-hover:text-cyan-300">
-                  View job details →
-                </div>
-              </Link>
+              <JobCard key={job.id} job={job} selectedSkills={selectedSkills} />
             ))}
           </div>
         </section>
 
-        <section className="mt-12 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <div>
-            <p className="text-sm font-medium text-cyan-400">
-              Skill graph
-            </p>
-
-            <h2 className="mt-1 text-2xl font-semibold">
-              Explore skill connections
-            </h2>
-
-            <p className="mt-2 text-sm text-zinc-400">
-              Discover skills connected to what you already know.
-            </p>
-          </div>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            {selectedSkills.map((skill) => (
-              <button
-                key={skill}
-                onClick={() => exploreSkill(skill)}
-                className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:border-cyan-400 hover:text-cyan-300"
-              >
-                Explore {skill}
-              </button>
-            ))}
-          </div>
-          {selectedSkills.length === 0 && (
-            <p className="mt-6 text-sm text-zinc-500">
-              Select a skill above to explore its connections.
-            </p>
-          )}
-          {graphLoading && (
-            <p className="mt-6 text-sm text-zinc-500">
-              Exploring connections...
-            </p>
-          )}
-
-          {!graphLoading && skillPaths.length > 0 && (
-            <div className="mt-6">
-              <div className="mb-4">
-                <p className="text-sm font-medium text-zinc-300">
-                  Two-hop skill connections
-                </p>
-
-                <p className="mt-1 text-xs text-zinc-600">
-                  Skills connected through one intermediate skill.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {skillPaths.map((path, index) => (
-                  <div
-                    key={`${path.join("-")}-${index}`}
-                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 transition hover:border-zinc-700"
-                  >
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      {path.map((skill, skillIndex) => (
-                        <div key={`${skill}-${skillIndex}`} className="flex items-center gap-2">
-                          <span className="rounded-full border border-cyan-400/10 bg-cyan-400/5 px-3 py-1 text-cyan-300">
-                            {skill}
-                          </span>
-
-                          {skillIndex < path.length - 1 && (
-                            <span className="text-zinc-600">→</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {!graphLoading &&
-            selectedSkills.length > 0 &&
-            skillPaths.length === 0 && (
-              <p className="mt-6 text-sm text-zinc-500">
-                No skill connections found for the selected skill.
-              </p>
-            )}
-        </section>
+        <SkillGraph selectedSkills={selectedSkills} />
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }

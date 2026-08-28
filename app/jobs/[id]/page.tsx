@@ -1,21 +1,7 @@
 import Link from "next/link";
+import type { JobDetail, SkillGraphResponse } from "@/types/job";
 
-type Job = {
-    id: string;
-    title: string;
-    location: string;
-    workMode: string;
-    experience: string;
-    company: string;
-    requiredSkills: string[];
-};
-
-type GraphData = {
-    skill: string;
-    paths: string[][];
-};
-
-async function getJob(id: string): Promise<Job> {
+async function getJob(id: string): Promise<JobDetail> {
     const response = await fetch(
         `http://localhost:3000/api/jobs/${id}`,
         {
@@ -30,7 +16,7 @@ async function getJob(id: string): Promise<Job> {
     return response.json();
 }
 
-async function getSkillGraph(skill: string): Promise<GraphData> {
+async function getSkillGraph(skill: string): Promise<SkillGraphResponse> {
     const response = await fetch(
         `http://localhost:3000/api/graph?skill=${encodeURIComponent(skill)}`,
         {
@@ -61,6 +47,10 @@ export default async function JobDetailsPage({
             .map((skill) => skill.trim())
             .filter(Boolean)
         : [];
+    const backHref =
+        selectedSkills.length > 0
+            ? `/?skills=${encodeURIComponent(selectedSkills.join(","))}`
+            : "/";
     const job = await getJob(id);
     const matchedSkills = job.requiredSkills.filter((skill) =>
         selectedSkills.includes(skill)
@@ -84,7 +74,7 @@ export default async function JobDetailsPage({
         <main className="min-h-screen bg-zinc-950 text-white">
             <div className="mx-auto max-w-4xl px-6 py-16">
                 <Link
-                    href="/"
+                    href={backHref}
                     className="text-sm text-zinc-500 hover:text-white"
                 >
                     ← Back to jobs

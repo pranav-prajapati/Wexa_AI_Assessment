@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { driver } from "@/lib/db";
-
-type JobResult = {
-  id: string;
-  title: string;
-  location: string;
-  workMode: string;
-  experience: string;
-  company: string;
-  requiredSkills: string[];
-  matchedSkills: string[];
-  missingSkills: string[];
-  matchPercentage: number;
-};
+import type { Job } from "@/types/job";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -61,7 +49,7 @@ export async function GET(request: NextRequest) {
       { skills },
     );
 
-    const jobs: JobResult[] = result.records.map((record) => {
+    const jobs: Job[] = result.records.map((record) => {
       const job = record.get("job");
       const company = record.get("company");
 
