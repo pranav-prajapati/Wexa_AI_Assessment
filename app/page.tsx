@@ -99,7 +99,13 @@ export default function Home() {
         </div>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="text-lg font-semibold">Your skills</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Your skills</h2>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              Select the skills you currently have.
+            </p>
+          </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
             {availableSkills.map((skill) => {
@@ -119,11 +125,16 @@ export default function Home() {
               );
             })}
           </div>
-
+          {selectedSkills.length > 0 && (
+            <p className="mt-4 text-sm text-zinc-500">
+              {selectedSkills.length}{" "}
+              {selectedSkills.length === 1 ? "skill" : "skills"} selected
+            </p>
+          )}
           <button
             onClick={findJobs}
             disabled={selectedSkills.length === 0 || loading}
-            className="mt-6 rounded-xl bg-white px-5 py-3 font-medium text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="mt-6 rounded-xl bg-cyan-400 px-5 py-3 font-medium text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? "Finding jobs..." : "Find matching jobs"}
           </button>
@@ -141,9 +152,18 @@ export default function Home() {
           </div>
 
           {jobs.length === 0 && !loading && (
-            <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
-              <p className="text-zinc-400">
-                Select your skills to discover matching opportunities.
+            <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/50 p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/10 text-xl text-cyan-300">
+                ✦
+              </div>
+
+              <h3 className="mt-4 text-lg font-semibold">
+                Discover your next opportunity
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+                Select the skills you know above and we'll find jobs that match
+                your current skill set.
               </p>
             </div>
           )}
@@ -155,17 +175,18 @@ export default function Home() {
                 href={`/jobs/${job.id}?skills=${encodeURIComponent(
                   selectedSkills.join(",")
                 )}`}
-                className="block rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-600 hover:bg-zinc-800"
-              >
+                className="group block rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-zinc-600 hover:bg-zinc-800">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-xl font-semibold">{job.title}</h3>
+                    <h3 className="text-xl font-semibold transition group-hover:text-cyan-300">
+                      {job.title}
+                    </h3>
 
                     <p className="mt-1 text-zinc-400">{job.company}</p>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-cyan-300">
+                    <div className="text-3xl font-bold tracking-tight text-cyan-300">
                       {job.matchPercentage}%
                     </div>
 
@@ -221,11 +242,11 @@ export default function Home() {
                         </span>
                       ))}
                     </div>
-                    <div className="mt-6 text-sm font-medium text-cyan-400">
-                      View job details →
-                    </div>
                   </div>
                 )}
+                <div className="mt-6 text-sm font-medium text-cyan-400 transition group-hover:text-cyan-300">
+                  View job details →
+                </div>
               </Link>
             ))}
           </div>
@@ -257,7 +278,11 @@ export default function Home() {
               </button>
             ))}
           </div>
-
+          {selectedSkills.length === 0 && (
+            <p className="mt-6 text-sm text-zinc-500">
+              Select a skill above to explore its connections.
+            </p>
+          )}
           {graphLoading && (
             <p className="mt-6 text-sm text-zinc-500">
               Exploring connections...
@@ -266,20 +291,26 @@ export default function Home() {
 
           {!graphLoading && skillPaths.length > 0 && (
             <div className="mt-6">
-              <p className="mb-3 text-sm text-zinc-500">
-                Two-hop skill connections
-              </p>
+              <div className="mb-4">
+                <p className="text-sm font-medium text-zinc-300">
+                  Two-hop skill connections
+                </p>
+
+                <p className="mt-1 text-xs text-zinc-600">
+                  Skills connected through one intermediate skill.
+                </p>
+              </div>
 
               <div className="space-y-3">
                 {skillPaths.map((path, index) => (
                   <div
                     key={`${path.join("-")}-${index}`}
-                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3"
+                    className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 transition hover:border-zinc-700"
                   >
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       {path.map((skill, skillIndex) => (
                         <div key={`${skill}-${skillIndex}`} className="flex items-center gap-2">
-                          <span className="rounded-full bg-cyan-400/10 px-3 py-1 text-cyan-300">
+                          <span className="rounded-full border border-cyan-400/10 bg-cyan-400/5 px-3 py-1 text-cyan-300">
                             {skill}
                           </span>
 
@@ -294,6 +325,13 @@ export default function Home() {
               </div>
             </div>
           )}
+          {!graphLoading &&
+            selectedSkills.length > 0 &&
+            skillPaths.length === 0 && (
+              <p className="mt-6 text-sm text-zinc-500">
+                No skill connections found for the selected skill.
+              </p>
+            )}
         </section>
       </div>
     </main>
