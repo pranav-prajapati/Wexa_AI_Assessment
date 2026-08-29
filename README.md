@@ -14,15 +14,15 @@ Try the deployed application:
 
 A short walkthrough of the application covering skill selection, automatic job matching, job details, navigation state preservation, skill graph exploration, and theme switching.
 
-**[Watch the demo](https://drive.google.com/file/d/1-553_jxLh6wNxxWjjmsm_ifIsqp-4TaT/view?usp=sharing)**
+**[Watch the demo](https://drive.google.com/file/d/1YQpUvnGYyMjbMs3xt1VQl-WzZv6ZdoUx/view?usp=sharing)**
 
 ## Screenshots
 
-### Homepage — Dark Mode
+### Homepage - Dark Mode
 
 ![SkillGraph homepage in dark mode](./screenshots/homepage-dark.png)
 
-### Homepage — Light Mode
+### Homepage - Light Mode
 
 ![SkillGraph homepage in light mode](./screenshots/homepage-light.png)
 
@@ -432,8 +432,8 @@ Keeping these definitions in one place avoids duplicate API and UI types.
 
 Reusable configuration is centralized under `constants/`:
 
-- `constants/skills.ts` — available skills
-- `constants/config.ts` — shared API route/configuration values
+- `constants/skills.ts` - available skills
+- `constants/config.ts` - shared API route/configuration values
 
 ---
 
