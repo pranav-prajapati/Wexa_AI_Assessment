@@ -6,6 +6,14 @@ Users select the skills they currently have and discover relevant job opportunit
 
 ---
 
+## Live Demo
+
+Try the deployed application:
+
+**https://wexa-ai-assessment-six.vercel.app/**
+
+---
+
 ## Features
 
 - Select and deselect multiple skills.
