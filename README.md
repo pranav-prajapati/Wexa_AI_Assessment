@@ -1,3 +1,9 @@
+# Author
+
+- Name: **Pranavkumar Prajapati**
+- GitHub Link: [pranav-prajapati](https://github.com/pranav-prajapati)
+- Email: p.pranav2820@gmail.com
+
 # Wexa AI Assessment
 
 SkillGraph is a graph-powered job discovery application built for the Wexa AI assessment.
