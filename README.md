@@ -14,7 +14,7 @@ Try the deployed application:
 
 A short walkthrough of the application covering skill selection, automatic job matching, job details, navigation state preservation, skill graph exploration, and theme switching.
 
-**[Watch the demo](YOUR_DEMO_VIDEO_LINK)**
+**[Watch the demo](https://drive.google.com/file/d/1-553_jxLh6wNxxWjjmsm_ifIsqp-4TaT/view?usp=sharing)**
 
 ## Screenshots
 
