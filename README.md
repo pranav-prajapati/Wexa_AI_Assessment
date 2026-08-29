@@ -4,43 +4,66 @@ SkillGraph is a graph-powered job discovery application built for the Wexa AI as
 
 Users select the skills they currently have and discover relevant job opportunities, see how their skills match each role, identify missing skills, and explore related skills through the graph database.
 
----
-
 ## Live Demo
 
 Try the deployed application:
 
 **https://wexa-ai-assessment-six.vercel.app/**
 
+## Demo Video
+
+A short walkthrough of the application covering skill selection, automatic job matching, job details, navigation state preservation, skill graph exploration, and theme switching.
+
+**[Watch the demo](YOUR_DEMO_VIDEO_LINK)**
+
+## Screenshots
+
+### Homepage — Dark Mode
+
+![SkillGraph homepage in dark mode](./screenshots/homepage-dark.png)
+
+### Homepage — Light Mode
+
+![SkillGraph homepage in light mode](./screenshots/homepage-light.png)
+
+### Job Details
+
+![SkillGraph job details page](./screenshots/job-details.png)
+
+### Skill Graph
+
+![SkillGraph skill graph exploration](./screenshots/skill-graph.png)
+
 ---
 
 ## Features
 
 - Select and deselect multiple skills.
-- Automatically fetch matching jobs when the selected skills change.
+- Automatically fetch matching jobs when selected skills change.
 - View match percentage, matched skills, and missing skills for each job.
 - Open a dedicated job details page.
 - Preserve selected skills and job results when navigating back from job details.
 - Preserve skill selection through browser Back navigation and page refreshes.
 - Explore two-hop relationships between skills.
-- Clear stale skill-graph results when the selected skills are cleared.
+- Highlight the skill currently being explored in the skill graph.
+- Clear stale skill-graph results when selected skills are cleared.
 - Responsive UI.
 - Dark and light themes.
 - Persist theme preference across reloads.
-- Respect the system color-scheme preference when no saved theme exists.
+- Follow the system color-scheme preference when no saved preference exists.
 - Centralized application constants, shared types, and semantic design tokens.
 
 ---
 
 ## Tech Stack
 
-- **Next.js**
-- **React**
+- **Next.js 16**
+- **React 19**
 - **TypeScript**
-- **Tailwind CSS**
-- **CognoDB / Neo4j-compatible graph database**
+- **Tailwind CSS 4**
+- **CognoDB**
 - **Neo4j JavaScript Driver**
-- **openCypher / Cypher**
+- **Cypher**
 - **ESLint**
 
 ---
@@ -91,7 +114,7 @@ Try the deployed application:
 
 - Node.js
 - npm
-- Access to a CognoDB / Neo4j-compatible database instance
+- A CognoDB instance
 
 ### 1. Install dependencies
 
@@ -99,7 +122,13 @@ Try the deployed application:
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Create a CognoDB instance
+
+Create a free CognoDB `c0` instance from the CognoDB console.
+
+After creating the instance, keep the connection details available for the application configuration.
+
+### 3. Configure environment variables
 
 Create `.env.local` in the project root:
 
@@ -111,15 +140,15 @@ COGNODB_PASSWORD=your_cognodb_password
 
 Never commit `.env.local` or real database credentials.
 
-### 3. Seed the database
+### 4. Seed the database
 
-The project includes a seed script for the sample companies, jobs, skills, and relationships:
+The repository includes a seed script for the sample companies, jobs, skills, and relationships:
 
 ```bash
 npm run seed
 ```
 
-### 4. Start the development server
+### 5. Start the development server
 
 ```bash
 npm run dev
@@ -165,7 +194,7 @@ Match:
 2 / 4 × 100 = 50%
 ```
 
-The response also includes the matched and missing skills.
+The response also includes matched and missing skills.
 
 The match percentage represents direct skill overlap; it is not an AI prediction.
 
@@ -183,11 +212,11 @@ The job details page retrieves the individual job through:
 GET /api/jobs/[id]
 ```
 
-The selected skills are carried through the URL so the user's context can be restored when returning to the job list.
+Selected skills are carried through the URL so the user's context can be restored when returning to the job list.
 
 ### Skill Graph
 
-Users can explore connections for any currently selected skill:
+Users can explore connections for any selected skill:
 
 ```text
 GET /api/graph?skill=React
@@ -196,10 +225,10 @@ GET /api/graph?skill=React
 The graph API performs a two-hop traversal using `RELATED_TO` relationships and returns paths such as:
 
 ```text
-React → TypeScript → Next.js
+React → JavaScript → TypeScript
 ```
 
-The UI keeps graph-specific state local to the SkillGraph component. When all selected skills are cleared, stale graph results are hidden and the empty state is restored.
+The graph component keeps its loading state and fetched paths local to the component. When all selected skills are cleared, stale graph results are hidden and the empty state is restored.
 
 ---
 
@@ -250,7 +279,7 @@ Example response:
 
 ---
 
-## Data Model
+## Graph Data Model
 
 The application uses a graph-oriented model:
 
@@ -299,6 +328,34 @@ This structure supports both job matching and multi-hop skill exploration.
 
 ---
 
+## Why a Graph Database?
+
+The core questions in SkillGraph are about relationships rather than isolated records:
+
+- Which jobs are connected to the skills a candidate already has?
+- Which skills are related to a candidate's existing skills?
+- What other skills can be reached through those relationships?
+
+The data naturally forms a graph:
+
+```text
+Company → Job → Skill → Related Skill
+```
+
+A relational database could represent the same information using separate tables and joins. However, exploring relationships across multiple skills would require increasingly complex joins or recursive queries.
+
+With a graph database, these relationships are first-class data. For example, a two-hop traversal such as:
+
+```text
+React → TypeScript → Next.js
+```
+
+can be queried directly through connected skill nodes.
+
+This makes CognoDB a natural fit for SkillGraph because the value of the application comes from understanding connections between jobs and skills, rather than simply retrieving independent rows.
+
+---
+
 ## Architecture
 
 ```text
@@ -332,25 +389,25 @@ This structure supports both job matching and multi-hop skill exploration.
 └───────────────────────────────┘
 ```
 
-Parameterized Cypher queries are used so user-provided values are passed separately from the query structure.
+Parameterized Cypher queries are used so user-provided values are passed separately from query structure.
 
 ---
 
 ## Component Architecture
 
-The UI is split into focused components:
+The UI is split into focused components.
 
 ### `SkillSelector`
 
-Handles the available skills and selected/unselected skill state.
+Displays available skills and handles skill selection through props.
 
 ### `JobCard`
 
-Displays a job's key information, match analysis, matched skills, missing skills, and navigation to job details.
+Displays job information, match analysis, matched skills, missing skills, and navigation to job details.
 
 ### `SkillGraph`
 
-Handles graph exploration, graph-specific loading state, and displayed skill paths.
+Handles graph exploration, graph-specific loading state, fetched paths, and the active explored skill.
 
 ### `ThemeToggle`
 
@@ -369,11 +426,11 @@ Handles dark/light theme switching and persistence.
 - `SkillGraphPath`
 - `SkillGraphResponse`
 
-This avoids duplicating API and UI type definitions.
+Keeping these definitions in one place avoids duplicate API and UI types.
 
 ### Constants
 
-Reusable values are centralized under `constants/`:
+Reusable configuration is centralized under `constants/`:
 
 - `constants/skills.ts` — available skills
 - `constants/config.ts` — shared API route/configuration values
@@ -394,8 +451,6 @@ Components use semantic utilities such as:
 - `text-success`
 - `text-foreground`
 
-This keeps visual decisions centralized instead of scattering hardcoded color values throughout components.
-
 The visual system uses:
 
 - charcoal surfaces for structure
@@ -411,7 +466,7 @@ Dark mode is the default theme.
 
 Users can switch to light mode with the theme toggle. The preference is persisted using `localStorage`.
 
-When no saved preference exists, the application falls back to the user's system color-scheme preference.
+When no saved preference exists, the application follows the user's system color-scheme preference.
 
 ---
 
@@ -433,23 +488,17 @@ For this application's scope, a global state library would add unnecessary compl
 
 ### Why calculate matching data in the API?
 
-The API already retrieves both the required skills and the selected-skill overlap.
+The API already retrieves required skills and determines their overlap with the selected skills.
 
-Calculating the match percentage and missing skills there keeps the job response consistent and allows the frontend to focus on presentation.
+Calculating the match percentage and missing skills there keeps the job response consistent and lets the frontend focus on presentation.
 
 ### Why use shared types?
 
-The API routes and UI consume the same domain models. Keeping these types in one place reduces duplication and makes future data-shape changes easier.
+The API routes and UI consume the same domain models. Keeping these types in one place reduces duplication and makes future data-shape changes easier to maintain.
 
 ### Why use centralized design tokens?
 
 Semantic design tokens allow the visual system to be changed in one place. For example, changing the primary accent does not require searching through every component for individual color values.
-
-### Why use a graph database?
-
-The application's most interesting operations are relationship-oriented: finding jobs connected to a user's skills and traversing relationships between skills.
-
-A graph model represents these relationships directly and makes multi-hop traversal natural to express.
 
 ---
 
@@ -467,7 +516,7 @@ and:
 npm run build
 ```
 
-Both complete successfully with no lint errors or build errors.
+Both complete successfully.
 
 The main application flows were also browser-tested, including:
 
@@ -477,6 +526,7 @@ The main application flows were also browser-tested, including:
 - browser Back navigation
 - skill and job-result restoration
 - skill graph exploration
+- active explored-skill highlighting
 - clearing stale graph results
 - dark/light theme switching
 - theme persistence
